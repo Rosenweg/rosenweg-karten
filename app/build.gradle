@@ -1,0 +1,50 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace 'ch.rosenweg4303.karten'
+    compileSdkVersion 35
+
+    defaultConfig {
+        applicationId "ch.rosenweg4303.karten"
+        minSdkVersion 26
+        targetSdkVersion 35
+        versionCode 1
+        versionName "1.0"
+    }
+
+    // Gleicher Schluessel wie Rosenweg Geraet: Pflicht, sonst gibt dessen AnlageProvider
+    // (Permission ch.rosenweg4303.permission.ANLAGE, protectionLevel signature) nichts heraus.
+    // keystore.properties hier oder die von android-sip-rosenweg daneben (nie einchecken).
+    signingConfigs {
+        release {
+            def kandidaten = [rootProject.file("keystore.properties"),
+                              rootProject.file("../android-sip-rosenweg/keystore.properties")]
+            def keystorePropsFile = kandidaten.find { it.exists() }
+            if (keystorePropsFile != null) {
+                def keystoreProps = new Properties()
+                keystoreProps.load(new FileInputStream(keystorePropsFile))
+                storeFile file(keystoreProps['storeFile'])
+                storePassword keystoreProps['storePassword']
+                keyAlias keystoreProps['keyAlias']
+                keyPassword keystoreProps['keyPassword']
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lintOptions {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+}

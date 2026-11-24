@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Rosenweg Karten: NFC-Karten (UniFi Access) nachschlagen, zuordnen, entziehen.
+     Kein INTERNET: alle Anfragen gehen ueber den AnlageProvider von Rosenweg Geraet
+     (ch.rosenweg4303.telefon), der die Geraete-Zugangsdaten hat. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.NFC" />
+    <uses-permission android:name="ch.rosenweg4303.permission.ANLAGE" />
+    <uses-feature android:name="android.hardware.nfc" android:required="false" />
+
+    <queries>
+        <provider android:authorities="ch.rosenweg4303.telefon.anlage" />
+    </queries>
+
+    <application
+        android:label="Rosenweg Karten"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+        <activity
+            android:name=".KartenActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
