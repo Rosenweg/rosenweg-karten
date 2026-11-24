@@ -457,8 +457,13 @@ public class KartenActivity extends Activity {
 		LinearLayout l = new LinearLayout(this);
 		l.setOrientation(LinearLayout.VERTICAL);
 		l.setBackgroundColor(Color.parseColor("#0F172A"));
-		l.setPadding(dp(24), dp(40), dp(24), dp(24));
-		l.setFitsSystemWindows(true);
+		// Eigener Abstand PLUS Systemleisten (fitsSystemWindows ersetzte den Abstand durch die
+		// Systemraender — seitlich 0, Kasten und Knoepfe klebten am Rand).
+		l.setOnApplyWindowInsetsListener((v, ins) -> {
+			v.setPadding(dp(24) + ins.getSystemWindowInsetLeft(), dp(24) + ins.getSystemWindowInsetTop(),
+					dp(24) + ins.getSystemWindowInsetRight(), dp(16) + ins.getSystemWindowInsetBottom());
+			return ins;
+		});
 		inhalt = l;
 
 		TextView titel = text(26, hell, true);
