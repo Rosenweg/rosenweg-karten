@@ -33,7 +33,7 @@ import java.util.concurrent.Executors;
 
 /**
  * Rosenweg Karten: NFC-Karte (UniFi Access) hinten ans Telefon halten -> wem gehoert sie,
- * Inventarnummer, Status; "Einer Person zuordnen" oder "Entziehen".
+ * Inventarnummer, Status; "Einer Person zuordnen", "Entziehen" oder (entzogen) "Aus dem Bestand loeschen".
  *
  * Nur fuer Technik/Praesident. Die App hat weder Netz noch Zugangsdaten: alles geht ueber
  * den AnlageProvider von Rosenweg Geraet (gleiche Signatur), der die angemeldete Person
@@ -49,7 +49,7 @@ public class KartenActivity extends Activity {
 	private LinearLayout inhalt;
 	private TextView hinweis, meldung, inhaber, nummer, zustand, uidText;
 	private LinearLayout kartenFeld;
-	private Button zuordnen, entziehen;
+	private Button zuordnen, entziehen, loeschen;
 	private boolean berechtigt;     // erst nach der ersten Antwort des Providers
 	private volatile boolean beschaeftigt;
 	private String uid;
@@ -156,6 +156,7 @@ public class KartenActivity extends Activity {
 		uidText.setText("UID " + neueUid);
 		zuordnen.setVisibility(View.GONE);
 		entziehen.setVisibility(View.GONE);
+		loeschen.setVisibility(View.GONE);
 		meldung.setVisibility(View.GONE);
 		hinweis.setText("Karte wird nachgeschlagen …");
 		ausfuehren(() -> rufe("karten_info", neueUid, null), a -> {
@@ -200,6 +201,8 @@ public class KartenActivity extends Activity {
 		boolean hatBesitzer = p != null || k.optBoolean("assigned")
 				|| !(k.isNull("access_name") || k.optString("access_name", "").isEmpty());
 		entziehen.setVisibility(bekannt && hatBesitzer ? View.VISIBLE : View.GONE);
+		// Loeschen nur fuer bekannte, entzogene Karten (zugeordnete zuerst entziehen)
+		loeschen.setVisibility(bekannt && !hatBesitzer ? View.VISIBLE : View.GONE);
 	}
 
 	// ─── Zuordnen / Entziehen ───────────────────────────────────────────────
@@ -310,6 +313,33 @@ public class KartenActivity extends Activity {
 							return;
 						}
 						zeigeOk("Entzogen.");
+						nachschlagenSpaeter(kartenUid);
+					});
+				})
+				.setNegativeButton("Abbrechen", null)
+				.show();
+	}
+
+	private void loeschenFragen() {
+		if (uid == null) return;
+		final String kartenUid = uid;
+		new AlertDialog.Builder(this)
+				.setTitle("Karte aus dem Bestand löschen?")
+				.setMessage("Karte " + kartenName() + " wird aus UniFi Access gelöscht (defekt oder verloren). "
+						+ "Sie lässt sich danach nur als neue Karte wieder zuordnen, mit neuer Inventarnummer.")
+				.setPositiveButton("Löschen", (x, w) -> {
+					hinweis.setText("Wird gelöscht …");
+					ausfuehren(() -> rufe("karten_loeschen", kartenUid, null), a -> {
+						hinweis.setText("Karte hinten ans Telefon halten.");
+						if (a.nichtBerechtigt) {
+							nichtBerechtigt();
+							return;
+						}
+						if (a.json == null) {
+							zeigeFehler(a.fehler);
+							return;
+						}
+						zeigeOk("Aus dem Bestand gelöscht.");
 						nachschlagenSpaeter(kartenUid);
 					});
 				})
@@ -517,6 +547,11 @@ public class KartenActivity extends Activity {
 		entziehen.setOnClickListener(v -> { if (!beschaeftigt) entziehenFragen(); });
 		entziehen.setVisibility(View.GONE);
 		l.addView(entziehen, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(52)));
+
+		loeschen = knopf("Aus dem Bestand löschen", "#7F1D1D");
+		loeschen.setOnClickListener(v -> { if (!beschaeftigt) loeschenFragen(); });
+		loeschen.setVisibility(View.GONE);
+		l.addView(loeschen, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(52)));
 		return l;
 	}
 }
