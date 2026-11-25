@@ -2,14 +2,14 @@ apply plugin: 'com.android.application'
 
 android {
     namespace 'ch.rosenweg4303.karten'
-    compileSdkVersion 35
+    compileSdk 36
 
     defaultConfig {
         applicationId "ch.rosenweg4303.karten"
-        minSdkVersion 26
-        targetSdkVersion 35
-        versionCode 3
-        versionName "1.2"
+        minSdk 26
+        targetSdk 35
+        versionCode 4
+        versionName "1.3"
     }
 
     // Gleicher Schluessel wie Rosenweg Geraet: Pflicht, sonst gibt dessen AnlageProvider
@@ -43,8 +43,13 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
-    lintOptions {
+    lint {
         checkReleaseBuilds false
         abortOnError false
     }
+}
+
+dependencies {
+    // Rosenweg-Anmeldung fuer Handys ohne Rosenweg Geraet (lokal: commons-rosenweg publishToMavenLocal)
+    implementation 'ch.rosenweg4303:cloud:0.7.0'
 }

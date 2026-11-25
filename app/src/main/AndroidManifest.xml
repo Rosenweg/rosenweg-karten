@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Rosenweg Karten: NFC-Karten (UniFi Access) nachschlagen, zuordnen, entziehen.
-     Kein INTERNET: alle Anfragen gehen ueber den AnlageProvider von Rosenweg Geraet
-     (ch.rosenweg4303.telefon), der die Geraete-Zugangsdaten hat. -->
+     Mit Rosenweg Geraet gehen alle Anfragen ueber dessen AnlageProvider; ohne Geraet (eigenes
+     Handy) direkt an die Anlage mit der Rosenweg-Anmeldung (INTERNET kommt vom Cloud-Modul). -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.NFC" />

@@ -22,6 +22,8 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import ch.rosenweg4303.cloud.RosenwegAnmeldung;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -35,8 +37,10 @@ import java.util.concurrent.Executors;
  * Rosenweg Karten: NFC-Karte (UniFi Access) hinten ans Telefon halten -> wem gehoert sie,
  * Inventarnummer, Status; "Einer Person zuordnen", "Entziehen" oder (entzogen) "Aus dem Bestand loeschen".
  *
- * Nur fuer Technik/Praesident. Die App hat weder Netz noch Zugangsdaten: alles geht ueber
- * den AnlageProvider von Rosenweg Geraet (gleiche Signatur), der die angemeldete Person
+ * Nur fuer Technik/Praesident. Mit Rosenweg Geraet (geteiltes Telefon) geht alles ueber dessen
+ * AnlageProvider; ohne Geraet (eigenes Handy, Stefan 25.11.2026) meldet sich die App mit dem
+ * Rosenweg-Konto an (Cloud-Modul, RosenwegAnmeldung) und fragt die Anlage direkt.
+ * Mit Geraet: der AnlageProvider (gleiche Signatur) prueft die angemeldete Person
  * prueft; die Anlage prueft nochmals.
  */
 public class KartenActivity extends Activity {
@@ -63,7 +67,10 @@ public class KartenActivity extends Activity {
 		JSONObject json;
 		String fehler;
 		boolean nichtBerechtigt;
+		boolean abgemeldet;   // ohne Geraet: keine (gueltige) Rosenweg-Anmeldung
 	}
+
+	private static final String ANLAGE_WEB = "https://pbx.rosenweg4303.ch";
 
 	@Override
 	protected void onCreate(Bundle b) {
@@ -74,9 +81,21 @@ public class KartenActivity extends Activity {
 	@Override
 	protected void onResume() {
 		super.onResume();
+		if (!RosenwegAnmeldung.INSTANCE.geraetDa(this) && !RosenwegAnmeldung.INSTANCE.angemeldet(this)) {
+			zeigeAnmelden();
+			return;
+		}
+		if (meldungIstAnmelden) {
+			meldungIstAnmelden = false;
+			setContentView(baue());
+		}
 		leserEin();
 		// Berechtigung pruefen und Personenliste vorladen
 		ausfuehren(() -> rufe("karten_personen", "personen", null), a -> {
+			if (a.abgemeldet) {
+				zeigeAnmelden();
+				return;
+			}
 			if (a.nichtBerechtigt) {
 				nichtBerechtigt();
 				return;
@@ -388,6 +407,7 @@ public class KartenActivity extends Activity {
 
 	/** Blockiert (der Provider geht ins Netz): nur im Hintergrund. */
 	private Antwort rufe(String methode, String arg, Bundle extras) {
+		if (!RosenwegAnmeldung.INSTANCE.geraetDa(this)) return rufeAnlage(methode, arg, extras);
 		Antwort a = new Antwort();
 		try {
 			Bundle b = getContentResolver().call(ANLAGE, methode, arg, extras);
@@ -414,6 +434,68 @@ public class KartenActivity extends Activity {
 		return a;
 	}
 
+	/** Ohne Rosenweg Geraet: dieselben Anfragen direkt an die Anlage, mit der Rosenweg-Anmeldung. */
+	private Antwort rufeAnlage(String methode, String arg, Bundle extras) {
+		Antwort a = new Antwort();
+		java.net.HttpURLConnection v = null;
+		try {
+			String token = RosenwegAnmeldung.INSTANCE.zugangsToken(this);
+			if (token == null) {
+				a.abgemeldet = true;
+				return a;
+			}
+			String pfad;
+			JSONObject koerper = null;
+			switch (methode) {
+				case "karten_personen": pfad = "/api/telefon/karten/personen"; break;
+				case "karten_info": pfad = "/api/telefon/karten/info"; koerper = new JSONObject().put("uid", arg); break;
+				case "karten_zuordnen": pfad = "/api/telefon/karten/zuordnen";
+					koerper = new JSONObject().put("uid", arg).put("email", extras == null ? "" : extras.getString("email", "")); break;
+				case "karten_entziehen": pfad = "/api/telefon/karten/entziehen"; koerper = new JSONObject().put("uid", arg); break;
+				case "karten_loeschen": pfad = "/api/telefon/karten/loeschen"; koerper = new JSONObject().put("uid", arg); break;
+				default: a.fehler = "Unbekannte Anfrage"; return a;
+			}
+			v = (java.net.HttpURLConnection) new java.net.URL(ANLAGE_WEB + pfad).openConnection();
+			v.setConnectTimeout(10000);
+			v.setReadTimeout(20000);
+			v.setRequestProperty("Authorization", "Bearer " + token);
+			v.setRequestProperty("Accept", "application/json");
+			if (koerper != null) {
+				v.setRequestMethod("POST");
+				v.setDoOutput(true);
+				v.setRequestProperty("Content-Type", "application/json");
+				try (java.io.OutputStream o = v.getOutputStream()) { o.write(koerper.toString().getBytes("UTF-8")); }
+			}
+			int status = v.getResponseCode();
+			java.io.InputStream in = status < 400 ? v.getInputStream() : v.getErrorStream();
+			StringBuilder text = new StringBuilder();
+			if (in != null) {
+				try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(in, "UTF-8"))) {
+					for (String z; (z = r.readLine()) != null; ) text.append(z);
+				}
+			}
+			JSONObject j = text.length() > 0 ? new JSONObject(text.toString()) : new JSONObject();
+			if (status == 401) {
+				RosenwegAnmeldung.INSTANCE.zugangUngueltig();
+				a.abgemeldet = true;
+			} else if (status == 403) {
+				a.nichtBerechtigt = true;
+			} else if (status == 200) {
+				a.json = j;
+			} else {
+				a.fehler = j.optString("error", "Anlage antwortet mit " + status);
+			}
+		} catch (java.io.IOException e) {
+			a.fehler = "Keine Verbindung zur Anlage.";
+		} catch (Exception e) {
+			Log.w(TAG, methode + ": " + e);
+			a.fehler = "Fehler: " + e.getMessage();
+		} finally {
+			if (v != null) v.disconnect();
+		}
+		return a;
+	}
+
 	private static List<JSONObject> liste(JSONArray a) {
 		List<JSONObject> l = new ArrayList<>();
 		for (int i = 0; a != null && i < a.length(); i++) {
@@ -426,6 +508,29 @@ public class KartenActivity extends Activity {
 	// ─── Oberflaeche (ohne Layout-Dateien wie Rosenweg Geraet) ──────────────
 
 	private boolean meldungIstNichtBerechtigt;
+	private boolean meldungIstAnmelden;
+
+	/** Ohne Rosenweg Geraet und ohne Anmeldung: "Mit Rosenweg anmelden". */
+	private void zeigeAnmelden() {
+		meldungIstAnmelden = true;
+		berechtigt = false;
+		NfcAdapter nfc = NfcAdapter.getDefaultAdapter(this);
+		if (nfc != null) {
+			try { nfc.disableReaderMode(this); } catch (Exception ignored) { }
+		}
+		inhalt.removeAllViews();
+		TextView titel = text(26, Color.parseColor("#E5E7EB"), true);
+		titel.setText("Rosenweg Karten");
+		inhalt.addView(titel);
+		TextView t = text(15, Color.parseColor("#94A3B8"), false);
+		t.setText("Auf diesem Handy ist Rosenweg Gerät nicht installiert. Melde dich mit deinem "
+				+ "Rosenweg-Konto an (nur Technik und Präsident).");
+		t.setPadding(0, dp(10), 0, dp(24));
+		inhalt.addView(t);
+		Button k = knopf("Mit Rosenweg anmelden", "#2563EB");
+		k.setOnClickListener(x -> RosenwegAnmeldung.INSTANCE.starten(this));
+		inhalt.addView(k, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(52)));
+	}
 
 	private void nichtBerechtigt() {
 		berechtigt = false;
@@ -552,6 +657,18 @@ public class KartenActivity extends Activity {
 		loeschen.setOnClickListener(v -> { if (!beschaeftigt) loeschenFragen(); });
 		loeschen.setVisibility(View.GONE);
 		l.addView(loeschen, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(52)));
+
+		if (!RosenwegAnmeldung.INSTANCE.geraetDa(this) && RosenwegAnmeldung.INSTANCE.angemeldet(this)) {
+			String wer = RosenwegAnmeldung.INSTANCE.name(this);
+			TextView ab = text(13, grau, false);
+			ab.setText("Angemeldet" + (wer == null || wer.isEmpty() ? "" : " als " + wer) + " · Abmelden");
+			ab.setPadding(0, dp(14), 0, 0);
+			ab.setOnClickListener(x -> {
+				RosenwegAnmeldung.INSTANCE.abmelden(this);
+				zeigeAnmelden();
+			});
+			l.addView(ab);
+		}
 		return l;
 	}
 }
