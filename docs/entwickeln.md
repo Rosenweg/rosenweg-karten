@@ -7,7 +7,7 @@ Android-App (Gradle), Paketname `ch.rosenweg4303.karten`.
 Die App holt `ch.rosenweg4303:cloud` aus dem lokalen Maven-Repository (`mavenLocal()`), also zuerst [commons-rosenweg](https://github.com/Rosenweg/commons-rosenweg) veröffentlichen:
 
 ```bash
-# in commons-rosenweg, Zweig rosenweg
+# in commons-rosenweg, Zweig main
 ./gradlew -PVERSION=7.1.3-rosenweg.1 publishToMavenLocal
 
 # in diesem Repo
