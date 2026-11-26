@@ -118,4 +118,4 @@ Keine GitHub-Secrets. Lokal nur `keystore.properties` (Signierschlüssel, nie ei
 
 ## Lizenz
 
-Eigene Entwicklung für die Siedlung Rosenweg. Eine Lizenz ist noch nicht festgelegt (keine LICENSE-Datei im Repo).
+GPL-3.0-or-later, siehe [LICENSE](LICENSE).
