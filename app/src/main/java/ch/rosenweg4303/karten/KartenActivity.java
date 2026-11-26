@@ -22,7 +22,9 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import ch.rosenweg4303.cloud.RosenwegAnmeldeSchirm;
 import ch.rosenweg4303.cloud.RosenwegAnmeldung;
+import ch.rosenweg4303.anmeldeschirm.Kartenleser;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -46,8 +48,9 @@ import java.util.concurrent.Executors;
 public class KartenActivity extends Activity {
 	private static final String TAG = "RosenwegKarten";
 	private static final Uri ANLAGE = Uri.parse("content://ch.rosenweg4303.telefon.anlage");
-	private static final int LESER_FLAGS = NfcAdapter.FLAG_READER_NFC_A | NfcAdapter.FLAG_READER_NFC_B
-			| NfcAdapter.FLAG_READER_NFC_F | NfcAdapter.FLAG_READER_NFC_V | NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK;
+	/** Reader-Modus und UID wie Sperrbildschirm und Anmeldeschirm (commons-rosenweg, anmeldeschirm). */
+	private static final int LESER_FLAGS = Kartenleser.FLAGS;
+	private final Kartenleser.Entpreller entpreller = new Kartenleser.Entpreller(3000);
 
 	private final ExecutorService netz = Executors.newSingleThreadExecutor();
 	private LinearLayout inhalt;
@@ -59,8 +62,6 @@ public class KartenActivity extends Activity {
 	private String uid;
 	private JSONObject karte;
 	private List<JSONObject> personen;
-	private String letzteUid;
-	private long letzteUidUm;
 
 	/** Antwort des Providers: json oder fehler. */
 	private static final class Antwort {
@@ -81,8 +82,10 @@ public class KartenActivity extends Activity {
 	@Override
 	protected void onResume() {
 		super.onResume();
-		if (!RosenwegAnmeldung.INSTANCE.geraetDa(this) && !RosenwegAnmeldung.INSTANCE.angemeldet(this)) {
-			zeigeAnmelden();
+		// Eigenes Handy ohne Anmeldung: gemeinsamer Anmeldeschirm (commons-rosenweg, wie der
+		// Sperrbildschirm der geteilten Telefone: Rosenweg-Karte oder Rosenweg-Konto)
+		if (RosenwegAnmeldeSchirm.zeigenFallsNoetig(this)) {
+			meldungIstAnmelden = true;
 			return;
 		}
 		if (meldungIstAnmelden) {
@@ -152,15 +155,8 @@ public class KartenActivity extends Activity {
 	}
 
 	private void karteGelesen(Tag tag) {
-		byte[] id = tag == null ? null : tag.getId();
-		if (id == null || id.length == 0) return;
-		StringBuilder hex = new StringBuilder();
-		for (byte x : id) hex.append(String.format("%02X", x));
-		String gelesen = hex.toString();
-		long jetzt = System.currentTimeMillis();
-		if (gelesen.equals(letzteUid) && jetzt - letzteUidUm < 3000) return;   // mehrfach gemeldet
-		letzteUid = gelesen;
-		letzteUidUm = jetzt;
+		String gelesen = Kartenleser.uid(tag);
+		if (gelesen == null || !entpreller.neu(gelesen)) return;   // mehrfach gemeldet
 		runOnUiThread(() -> nachschlagen(gelesen));
 	}
 
@@ -510,7 +506,10 @@ public class KartenActivity extends Activity {
 	private boolean meldungIstNichtBerechtigt;
 	private boolean meldungIstAnmelden;
 
-	/** Ohne Rosenweg Geraet und ohne Anmeldung: "Mit Rosenweg anmelden". */
+	/**
+	 * Ohne Rosenweg Geraet: Anmeldung ungueltig (401) oder abgemeldet - Anmeldung verwerfen und den
+	 * gemeinsamen Anmeldeschirm zeigen (commons-rosenweg: Rosenweg-Karte oder Rosenweg-Konto).
+	 */
 	private void zeigeAnmelden() {
 		meldungIstAnmelden = true;
 		berechtigt = false;
@@ -518,18 +517,8 @@ public class KartenActivity extends Activity {
 		if (nfc != null) {
 			try { nfc.disableReaderMode(this); } catch (Exception ignored) { }
 		}
-		inhalt.removeAllViews();
-		TextView titel = text(26, Color.parseColor("#E5E7EB"), true);
-		titel.setText("Rosenweg Karten");
-		inhalt.addView(titel);
-		TextView t = text(15, Color.parseColor("#94A3B8"), false);
-		t.setText("Auf diesem Handy ist Rosenweg Gerät nicht installiert. Melde dich mit deinem "
-				+ "Rosenweg-Konto an (nur Technik und Präsident).");
-		t.setPadding(0, dp(10), 0, dp(24));
-		inhalt.addView(t);
-		Button k = knopf("Mit Rosenweg anmelden", "#2563EB");
-		k.setOnClickListener(x -> RosenwegAnmeldung.INSTANCE.starten(this));
-		inhalt.addView(k, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(52)));
+		RosenwegAnmeldung.INSTANCE.abmelden(this);
+		RosenwegAnmeldeSchirm.zeigenFallsNoetig(this);
 	}
 
 	private void nichtBerechtigt() {
