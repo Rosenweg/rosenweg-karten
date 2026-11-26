@@ -12,6 +12,22 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        // Rosenweg: commons-rosenweg (ch.rosenweg4303:*) aus GitHub Packages. Anmeldedaten lokal aus
+        // ~/.gradle/gradle.properties (gpr.user/gpr.key), in Actions GPR_TOKEN oder GITHUB_TOKEN.
+        // Ohne Anmeldedaten nur mavenLocal (Rueckfall, publishToMavenLocal).
+        def gprUser = findProperty('gpr.user') ?: System.getenv('GITHUB_ACTOR')
+        def gprKey = findProperty('gpr.key') ?: System.getenv('GPR_TOKEN') ?: System.getenv('GITHUB_TOKEN')
+        if (gprUser && gprKey) {
+            maven {
+                name 'RosenwegCommons'
+                url 'https://maven.pkg.github.com/Rosenweg/commons-rosenweg'
+                credentials {
+                    username gprUser
+                    password gprKey
+                }
+                content { includeGroup 'ch.rosenweg4303' }
+            }
+        }
         mavenLocal()
     }
 }
