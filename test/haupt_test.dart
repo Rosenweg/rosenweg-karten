@@ -183,4 +183,13 @@ void main() {
     expect(File('assets/logo/${appAngaben.ordner}-512.png').existsSync(), isTrue);
     expect(File('assets/logo/${appAngaben.ordner}-klein.png').existsSync(), isTrue);
   });
+
+  test('401 der Anlage: Grund auf den Schirm, kein stilles Abmelden (wie 1.6.3)', () async {
+    final a = Attrappe();
+    a.erzwungen['POST /api/telefon/karten/info'] = (status: 401, json: {'error': 'Geraet nicht berechtigt'});
+    await expectLater(
+      KartenApi(a).nachschlagen('04AABBCC'),
+      throwsA(isA<ApiFehler>().having((e) => e.text, 'text', contains('Geraet nicht berechtigt')).having((e) => e is NichtAngemeldet, 'abmelden', isFalse)),
+    );
+  });
 }

@@ -5,7 +5,7 @@
 
 Kartenverwaltung für Technik und Präsident: Rosenweg-Karte (UniFi Access) hinhalten oder auflegen, sehen, wem sie gehört, sie einer Person zuordnen, entziehen oder aus dem Bestand löschen. Dazu das Kartenprotokoll und die Karten-, QR- und Handy-Anmeldungen der Apps aller Personen.
 
-Ab 2.0.0 eine Flutter-App für Linux, macOS, Windows, Android und iOS; sie ersetzt die frühere Android-App (Java, bis 1.6.2) mit **derselben Kennung** `ch.rosenweg4303.karten`, demselben Rosenweg-Schlüssel und höherem `versionCode` (10 statt 9) – Android spielt sie als gewöhnliches Update darüber.
+Ab 2.0.0 eine Flutter-App für Linux, macOS, Windows, Android und iOS; sie ersetzt die frühere Android-App (Java, bis 1.6.3) mit **derselben Kennung** `ch.rosenweg4303.karten`, demselben Rosenweg-Schlüssel und höherem `versionCode` (11 statt 10) – Android spielt sie als gewöhnliches Update darüber.
 
 Angelegt mit `werkzeug/neue-app.sh` aus der App-Vorlage von
 [rosenweg-basis](https://github.com/Rosenweg/rosenweg-basis). Anmeldung, API,

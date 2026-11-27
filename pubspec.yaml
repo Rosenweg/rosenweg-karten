@@ -3,11 +3,11 @@ description: "Rosenweg Karten – Rosenweg-Karten nachschlagen, Personen zuordne
 publish_to: 'none'
 
 # version: x.y.z+Baunummer. Die Baunummer ist der Android-versionCode: die alte
-# Java-App stand bei 1.6.2 (9); hoeher, damit sie sauber ersetzt wird.
+# Java-App stand bei 1.6.3 (10); hoeher, damit sie sauber ersetzt wird.
 # version: x.y.z+Baunummer. Ein Merge auf main mit einer NEUEN Version (Tag
 # vx.y.z gibt es noch nicht) baut alle Plattformen und veroeffentlicht sie
 # (GitHub-Release, /apps). Unveraenderte Version = nur CI, kein Release.
-version: 2.0.0+10
+version: 2.0.0+11
 
 environment:
   sdk: ^3.13.4

@@ -25,14 +25,28 @@ class KartenApi {
   final Transport _transport;
 
   Future<Map<String, dynamic>> _post(String pfad, Map<String, Object?> koerper) async {
-    final j = apiAntwortPruefen(await _transport.senden('POST', pfad, koerper: koerper));
+    final j = _pruefen(await _transport.senden('POST', pfad, koerper: koerper));
     return j is Map<String, dynamic> ? j : const {};
+  }
+
+  /// Wie [apiAntwortPruefen], aber ein 401 der Anlage meldet NICHT still ab:
+  /// Der Grund der Anlage kommt auf den Schirm (Schleife mit 1.6.2: Karte
+  /// hinhalten, 401 "Geraet nicht berechtigt", Anmeldeschirm, … – in 1.6.3
+  /// behoben). Abmelden kann die Person selbst im Menue.
+  static Object? _pruefen(ApiAntwort a) {
+    if (a.status == 401) {
+      final j = a.json;
+      final grund = j is Map && j['error'] is String ? ': ${j['error']}' : '';
+      throw ApiFehler(401, 'Die Telefonanlage lehnt die Anmeldung ab (401)$grund. '
+          'Nochmals versuchen oder im Menü abmelden und neu anmelden.', j);
+    }
+    return apiAntwortPruefen(a);
   }
 
   Future<Karte> nachschlagen(String uid) async => Karte.aus(uid, await _post('/api/telefon/karten/info', {'uid': uid}));
 
   Future<List<Person>> personen() async {
-    final j = apiAntwortPruefen(await _transport.senden('GET', '/api/telefon/karten/personen'));
+    final j = _pruefen(await _transport.senden('GET', '/api/telefon/karten/personen'));
     final l = j is Map ? j['personen'] : null;
     return [
       for (final p in l is List ? l : const []) if (p is Map<String, dynamic>) Person.aus(p),
