@@ -23,9 +23,8 @@ dependencies:
   rosenweg_basis:
     git:
       url: https://github.com/Rosenweg/rosenweg-basis.git
-      # fester Stand. Bis rosenweg-basis v0.6.0 getaggt ist: Commit von PR #14
-      # (Karte lesen in der App, BestaetigungPerEmail); danach ref: v0.6.0.
-      ref: 4a21a0dd3357b27f558bc37b7095ec6a9520f0ab
+      # fester Tag (Karte lesen in der App, BestaetigungPerEmail); neue Basis = neuer Tag
+      ref: v0.6.0
 
 dev_dependencies:
   flutter_test:
