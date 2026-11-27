@@ -10,6 +10,7 @@ import android.net.Uri;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -70,7 +71,11 @@ public class KartenActivity extends Activity {
 		String fehler;
 		boolean nichtBerechtigt;
 		boolean abgemeldet;   // ohne Geraet: keine (gueltige) Rosenweg-Anmeldung
+		boolean abgelehnt;    // ohne Geraet: Anlage lehnt einen gueltigen Zugang ab (401), fehler = Grund
 	}
+
+	/** Zeitpunkt (elapsedRealtime) der letzten Rueckkehr vom Anmeldeschirm, 0 = keine. */
+	private long angemeldetUm;
 
 	private static final String ANLAGE_WEB = "https://pbx.rosenweg4303.ch";
 
@@ -91,12 +96,22 @@ public class KartenActivity extends Activity {
 		}
 		if (meldungIstAnmelden) {
 			meldungIstAnmelden = false;
+			angemeldetUm = SystemClock.elapsedRealtime();
 			setContentView(baue());
 		}
 		leserEin();
 		// Berechtigung pruefen und Personenliste vorladen
 		ausfuehren(() -> rufe("karten_personen", "personen", null), a -> {
+			if (a.abgelehnt) {
+				// Nie still abmelden und den Anmeldeschirm wieder zeigen (Schleife 27.11.2026)
+				zeigeAbgelehnt(a.fehler);
+				return;
+			}
 			if (a.abgemeldet) {
+				if (Ablehnung.gleichNachAnmeldung(angemeldetUm, SystemClock.elapsedRealtime())) {
+					zeigeAbgelehnt(Ablehnung.VERLOREN);
+					return;
+				}
 				zeigeAnmelden();
 				return;
 			}
@@ -473,8 +488,12 @@ public class KartenActivity extends Activity {
 			}
 			JSONObject j = text.length() > 0 ? new JSONObject(text.toString()) : new JSONObject();
 			if (status == 401) {
+				// Der Zugang war eben noch gueltig (KartenSitzung erneuert ihn vorher): beim naechsten
+				// Mal neu holen, aber NICHT abmelden - sonst Anmeldeschirm, Karte, 401, ... (Schleife)
 				RosenwegAnmeldung.INSTANCE.zugangUngueltig();
-				a.abgemeldet = true;
+				a.abgelehnt = true;
+				a.fehler = Ablehnung.text(status, j.optString("error", ""));
+				Log.w(TAG, methode + ": " + a.fehler);
 			} else if (status == 403) {
 				a.nichtBerechtigt = true;
 			} else if (status == 200) {
@@ -538,6 +557,47 @@ public class KartenActivity extends Activity {
 		u.setText("Die Kartenverwaltung ist nur für Technik und Präsident.");
 		inhalt.addView(u);
 		// Eigenes Handy: mit einer anderen Person anmelden (Abmelden in den Einstellungen)
+		View platz = new View(this);
+		inhalt.addView(platz, new LinearLayout.LayoutParams(1, 0, 1f));
+		inhalt.addView(einstellungenZeile(Color.parseColor("#94A3B8")));
+	}
+
+	/**
+	 * Ohne Rosenweg Geraet: die Anlage lehnt die eben erfolgte Anmeldung ab. Klare Meldung mit
+	 * Grund statt still abmelden und den Anmeldeschirm wieder zeigen (Anmeldeschleife in 1.6.2).
+	 * Die Person entscheidet: erneut versuchen oder abmelden und neu anmelden.
+	 */
+	private void zeigeAbgelehnt(String grund) {
+		berechtigt = false;
+		meldungIstNichtBerechtigt = true;   // Leser aus; bei Erfolg baut onResume neu auf
+		NfcAdapter nfc = NfcAdapter.getDefaultAdapter(this);
+		if (nfc != null) {
+			try { nfc.disableReaderMode(this); } catch (Exception ignored) { }
+		}
+		inhalt.removeAllViews();
+		TextView t = text(20, Color.parseColor("#FCA5A5"), true);
+		t.setText("Anmeldung abgelehnt");
+		t.setPadding(0, dp(60), 0, dp(8));
+		inhalt.addView(t);
+		TextView u = text(15, Color.parseColor("#E5E7EB"), false);
+		u.setText(grund == null ? Ablehnung.text(401, "") : grund);
+		u.setTextIsSelectable(true);   // zum Weitergeben an die Technik
+		inhalt.addView(u);
+		TextView h = text(13, Color.parseColor("#94A3B8"), false);
+		h.setText("Bitte der Technik melden, falls es wieder passiert.");
+		h.setPadding(0, dp(8), 0, dp(24));
+		inhalt.addView(h);
+		Button nochmal = knopf("Erneut versuchen", "#2563EB");
+		nochmal.setOnClickListener(v -> recreate());
+		inhalt.addView(nochmal, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(52)));
+		Button neu = knopf("Abmelden und neu anmelden", "#334155");
+		neu.setOnClickListener(v -> {
+			angemeldetUm = 0;
+			zeigeAnmelden();
+		});
+		LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(52));
+		lp.topMargin = dp(12);
+		inhalt.addView(neu, lp);
 		View platz = new View(this);
 		inhalt.addView(platz, new LinearLayout.LayoutParams(1, 0, 1f));
 		inhalt.addView(einstellungenZeile(Color.parseColor("#94A3B8")));

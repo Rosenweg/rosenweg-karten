@@ -33,7 +33,7 @@ jobs:
           distribution: temurin
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6
       - name: Bauen
-        run: ./gradlew --no-daemon :app:assembleDebug :app:lintDebug
+        run: ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug :app:lintDebug
       - name: Lint-Bericht
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: ${{ !cancelled() }}
