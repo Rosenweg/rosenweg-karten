@@ -2,6 +2,7 @@ package ch.rosenweg4303.karten;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
@@ -83,7 +84,7 @@ public class KartenActivity extends Activity {
 	protected void onResume() {
 		super.onResume();
 		// Eigenes Handy ohne Anmeldung: gemeinsamer Anmeldeschirm (commons-rosenweg, wie der
-		// Sperrbildschirm der geteilten Telefone: Rosenweg-Karte oder Rosenweg-Konto)
+		// Sperrbildschirm der geteilten Telefone: Rosenweg-Karte, Rosenweg-Konto oder QR-Code)
 		if (RosenwegAnmeldeSchirm.zeigenFallsNoetig(this)) {
 			meldungIstAnmelden = true;
 			return;
@@ -508,7 +509,7 @@ public class KartenActivity extends Activity {
 
 	/**
 	 * Ohne Rosenweg Geraet: Anmeldung ungueltig (401) oder abgemeldet - Anmeldung verwerfen und den
-	 * gemeinsamen Anmeldeschirm zeigen (commons-rosenweg: Rosenweg-Karte oder Rosenweg-Konto).
+	 * gemeinsamen Anmeldeschirm zeigen (commons-rosenweg: Rosenweg-Karte, Rosenweg-Konto oder QR-Code).
 	 */
 	private void zeigeAnmelden() {
 		meldungIstAnmelden = true;
@@ -536,6 +537,10 @@ public class KartenActivity extends Activity {
 		TextView u = text(15, Color.parseColor("#94A3B8"), false);
 		u.setText("Die Kartenverwaltung ist nur für Technik und Präsident.");
 		inhalt.addView(u);
+		// Eigenes Handy: mit einer anderen Person anmelden (Abmelden in den Einstellungen)
+		View platz = new View(this);
+		inhalt.addView(platz, new LinearLayout.LayoutParams(1, 0, 1f));
+		inhalt.addView(einstellungenZeile(Color.parseColor("#94A3B8")));
 	}
 
 	private void zeigeFehler(String t) {
@@ -647,17 +652,16 @@ public class KartenActivity extends Activity {
 		loeschen.setVisibility(View.GONE);
 		l.addView(loeschen, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(52)));
 
-		if (!RosenwegAnmeldung.INSTANCE.geraetDa(this) && RosenwegAnmeldung.INSTANCE.angemeldet(this)) {
-			String wer = RosenwegAnmeldung.INSTANCE.name(this);
-			TextView ab = text(13, grau, false);
-			ab.setText("Angemeldet" + (wer == null || wer.isEmpty() ? "" : " als " + wer) + " · Abmelden");
-			ab.setPadding(0, dp(14), 0, 0);
-			ab.setOnClickListener(x -> {
-				RosenwegAnmeldung.INSTANCE.abmelden(this);
-				zeigeAnmelden();
-			});
-			l.addView(ab);
-		}
+		// Wer angemeldet ist; Abmelden in den Einstellungen wie in den anderen Rosenweg-Apps
+		l.addView(einstellungenZeile(grau));
 		return l;
+	}
+
+	private TextView einstellungenZeile(int farbe) {
+		TextView ab = text(13, farbe, false);
+		ab.setText(EinstellungenActivity.anmeldeText(this) + " · Einstellungen");
+		ab.setPadding(0, dp(14), 0, dp(4));
+		ab.setOnClickListener(x -> startActivity(new Intent(this, EinstellungenActivity.class)));
+		return ab;
 	}
 }

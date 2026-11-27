@@ -8,8 +8,8 @@ android {
         applicationId "ch.rosenweg4303.karten"
         minSdk 26
         targetSdk 35
-        versionCode 8
-        versionName "1.6.1"
+        versionCode 9
+        versionName "1.6.2"
     }
 
     // Gleicher Schluessel wie Rosenweg Geraet: Pflicht, sonst gibt dessen AnlageProvider
@@ -50,6 +50,7 @@ android {
 }
 
 dependencies {
-    // Rosenweg-Anmeldung fuer Handys ohne Rosenweg Geraet (lokal: commons-rosenweg publishToMavenLocal)
-    implementation 'ch.rosenweg4303:cloud:0.10.1'
+    // Rosenweg-Anmeldung fuer Handys ohne Rosenweg Geraet: gemeinsamer Anmeldeschirm (Karte,
+    // Rosenweg-Konto, ab 0.12.0 QR-Code) aus GitHub Packages (Rueckfall mavenLocal)
+    implementation 'ch.rosenweg4303:cloud:0.13.4'
 }

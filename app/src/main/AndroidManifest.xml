@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Rosenweg Karten: NFC-Karten (UniFi Access) nachschlagen, zuordnen, entziehen.
      Mit Rosenweg Geraet gehen alle Anfragen ueber dessen AnlageProvider; ohne Geraet (eigenes
-     Handy) direkt an die Anlage mit der Rosenweg-Anmeldung (INTERNET kommt vom Cloud-Modul). -->
+     Handy) direkt an die Anlage mit der Rosenweg-Anmeldung (INTERNET kommt vom Cloud-Modul, ab
+     cloud 0.12.0 auch CAMERA fuer "QR-Code scannen" im Anmeldeschirm; gefragt erst beim Tippen). -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.NFC" />
@@ -28,5 +29,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".EinstellungenActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
     </application>
 </manifest>

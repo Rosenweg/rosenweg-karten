@@ -67,7 +67,7 @@ Mehr: [docs/anleitung.md](docs/anleitung.md).
 | Gerät | Anmeldung | Weg der Anfragen |
 |---|---|---|
 | Geteiltes Rosenweg-Telefon | Karte am Sperrbildschirm (Rosenweg Gerät) | über Rosenweg Gerät an die Telefonanlage; die App hat keine Zugangsdaten |
-| Eigenes Handy ohne Rosenweg Gerät | Rosenweg-Konto (Modul `cloud` aus commons-rosenweg) | direkt an die Telefonanlage |
+| Eigenes Handy ohne Rosenweg Gerät | gemeinsamer Anmeldeschirm (Modul `cloud` aus commons-rosenweg): Rosenweg-Karte, Rosenweg-Konto oder QR-Code; Abmelden unter „Einstellungen“ | direkt an die Telefonanlage, mit dem Zugang der Anmeldung (Karte/QR: `rw_app_…`, Konto: Authentik-Token); die Anlage prüft Technik/Präsident |
 
 Auf den geteilten Telefonen braucht die App die Rosenweg-Signatur (sonst „Rosenweg Gerät verweigert den Zugriff“) und Rosenweg Gerät ab Version 186.
 
@@ -76,7 +76,8 @@ Auf den geteilten Telefonen braucht die App die Rosenweg-Signatur (sonst „Rose
 | Teil | Inhalt |
 |---|---|
 | `app/src/main/java/…/KartenActivity.java` | die ganze App: NFC lesen, Anzeige, Zuordnen, Entziehen, Löschen |
-| `ch.rosenweg4303:cloud` | Anmeldung mit dem Rosenweg-Konto auf eigenen Handys ([commons-rosenweg](https://github.com/Rosenweg/commons-rosenweg)) |
+| `app/src/main/java/…/EinstellungenActivity.java` | Einstellungen: wer angemeldet ist und womit, Abmelden (nur eigenes Handy), Version |
+| `ch.rosenweg4303:cloud` (0.13.4) | Anmeldeschirm (Karte, Konto, QR-Code) auf eigenen Handys ([commons-rosenweg](https://github.com/Rosenweg/commons-rosenweg)) |
 | `assets/logo/` | Logo aus dem Baukasten von rosenweg-basis: Wappen (Turm, Weg, Rose) mit Karten-Plakette, dazu ein monochromes Designsymbol (Android 13+) |
 
 **Server:** Endpunkte `/api/telefon/karten/info`, `…/zuordnen`, `…/entziehen`, `…/loeschen`, `…/personen` der Telefonanlage; sie reicht an die Haupt-API und UniFi Access weiter (Rosenweg/Website, `pbx/GETEILTE-TELEFONE.md`).
@@ -105,6 +106,7 @@ Mehr: [docs/entwickeln.md](docs/entwickeln.md).
 
 | Schritt | Was |
 |---|---|
+| CI | `.github/workflows/ci.yml`: bei jedem PR Debug-Bau und Lint (GitHub-Runner) |
 | APK bauen | lokal mit dem Rosenweg-Schlüssel (siehe oben) |
 | Release | `gh release create v<versionName> <datei.apk> --notes "Was ist neu"` – Tag = versionName, eine APK je Release |
 | Verteilen | `.github/workflows/apps.yml` (nutzt `apps-release.yml` aus Rosenweg/Website) schickt die APK an **[rosenweg4303.ch/apps](https://www.rosenweg4303.ch/apps)** und in den App-Katalog der Telefonanlage |
