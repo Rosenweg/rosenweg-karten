@@ -1,0 +1,12 @@
+{
+  "_hinweis": "Eintrag fuer apps-register.json (Rosenweg/Website, Abschnitt 'apps', Schluessel 'karten'); ersetzt dort den Katalog-Eintrag ch.rosenweg4303.karten. Logo: assets/logo/rosenweg-karten-192.png als img/apps/rosenweg-karten.png.",
+  "app": "karten",
+  "name": "Rosenweg Karten",
+  "repo": "Rosenweg/rosenweg-karten",
+  "paket": "ch.rosenweg4303.karten",
+  "logo": "/img/apps/rosenweg-karten.png",
+  "reihenfolge": 100,
+  "text": "Rosenweg-Karten nachschlagen, Personen zuordnen, entziehen und aus dem Bestand löschen; Kartenprotokoll und Karten-Anmeldungen der Apps.",
+  "fuer": "Für die Technik und den Präsidenten.",
+  "technik": true
+}

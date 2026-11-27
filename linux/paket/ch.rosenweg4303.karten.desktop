@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Rosenweg Karten
+Comment=Rosenweg-Karten nachschlagen, Personen zuordnen, entziehen und aus dem Bestand löschen.
+Exec=rosenweg-karten
+# Name im Symbol-Thema (hicolor), kein Pfad.
+Icon=rosenweg-karten
+Terminal=false
+# Dateiname = GTK-Anwendungskennung (APPLICATION_ID in linux/CMakeLists.txt).
+StartupWMClass=ch.rosenweg4303.karten
+# Kategorie "Rosenweg" im Startmenue der Stationen (os-stationen 60-programme.sh)
+Categories=Office;Utility;
+Keywords=Rosenweg;

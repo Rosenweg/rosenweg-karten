@@ -1,15 +1,40 @@
-# Anleitung
+# Rosenweg Karten – Anleitung
 
-Kleine App für die Technik der Siedlung Rosenweg in Kaiseraugst, um NFC-Zutrittskarten (UniFi Access) zu verwalten. Karte hinten ans Telefon halten: die App zeigt, wem die Karte gehört, die Inventarnummer und den Status. Von dort lässt sich die Karte einer Person zuordnen, entziehen oder (wenn entzogen) aus dem Bestand löschen. Mit diesen Karten melden sich die Leute auch an den geteilten Rosenweg-Telefonen an.
+Rosenweg-Karten nachschlagen, Personen zuordnen, entziehen und aus dem Bestand löschen.
 
-## Im Rosenweg
+## Installieren
 
-- Nur für berechtigte Personen; die Telefonanlage prüft die Berechtigung bei jeder Aktion.
-- **Geteilte Telefone:** Alles läuft über Rosenweg Gerät und die dort angemeldete Person; die App selbst hat dann keine Zugangsdaten.
-- **Eigenes Handy:** Ohne Rosenweg Gerät meldet sich die App mit dem Rosenweg-Konto an (Modul `cloud` aus [commons-rosenweg](https://github.com/Rosenweg/commons-rosenweg)) und fragt die Telefonanlage direkt.
-- Zuordnen über eine durchsuchbare Personenliste; Entziehen und Löschen nur mit Rückfrage.
+Auf [www.rosenweg4303.ch/apps](https://www.rosenweg4303.ch/apps) die Datei für das
+eigene Gerät laden. An den Rosenweg-Stationen ist die App schon da (Startmenü,
+Bereich „Rosenweg“).
 
-## Installation
+## Anmelden
 
-- **Geteilte Rosenweg-Telefone:** Rosenweg Gerät installiert die App aus dem App-Katalog der Telefonanlage, sofern sie für die angemeldete Person freigegeben ist.
-- **Eigenes Handy:** APK von [www.rosenweg4303.ch/apps](https://www.rosenweg4303.ch/apps) herunterladen und installieren. Aktualisiert wird sie vom Rosenweg Updater der anderen Rosenweg-Apps.
+Beim ersten Start „Mit Rosenweg-Konto anmelden“, die Rosenweg-Karte an den Leser
+halten oder den QR-Code mit dem Handy bestätigen. An den Stationen geht es ohne
+Eingabe (Domänenanmeldung). Auf den geteilten Telefonen meldet die Karte am
+Telefon an – in der App gibt es dann kein „Abmelden“.
+
+## Bedienung
+
+Nur für Technik und Präsident.
+
+**Karte** – Karte hinten ans Handy halten bzw. auf den Kartenleser der Station legen. Ohne Leser: „Nummer eintippen“ (die Seriennummer, z. B. `04D4C227C22A81`). Die App zeigt, wem die Karte gehört, die Inventarnummer und ob sie Türen öffnet.
+
+- *Einer Person zuordnen* (nur freie oder unbekannte Karten): Person suchen, bestätigen. Die Türleser übernehmen das in etwa 30 Sekunden. Eine unbekannte Karte wird dabei in UniFi Access angelegt.
+- *Entziehen*: Die Karte öffnet keine Türen mehr und meldet niemanden mehr an; sie bleibt im Bestand.
+- *Aus dem Bestand löschen* (nur entzogene Karten): defekt oder verloren. Wieder zuordnen geht dann nur als neue Karte.
+
+Geht kein Leser, steht dort, warum: kein NFC, NFC ausgeschaltet (mit Knopf zu den Einstellungen), kein Kartenleser angeschlossen.
+
+**Protokoll** – wer wann welche Karte zugeordnet, entzogen oder gelöscht hat, dazu Anmeldungen und Admin-Aktionen, die mit einer Karte gemacht wurden. Antippen zeigt die Einzelheiten.
+
+**Anmeldungen** – alle Apps, in denen sich jemand mit Karte, QR-Code oder Handy angemeldet hat. Antippen: diese Anmeldung beenden oder alle Apps der Person abmelden (zum Beispiel bei verlorener Karte). Das geht nur, wenn du mit dem Rosenweg-Konto angemeldet bist.
+
+**Mit der Karte angemeldet?** Dann wird jede Änderung protokolliert, und du bekommst eine Quittung per E-Mail. Verlangt die Anlage für eine Aktion eine Bestätigung, zeigt die App „Bestätigung per E-Mail nötig“: Erst wenn du den Link in der Mail bestätigst, passiert etwas.
+
+## Aktualisieren
+
+Die App meldet neue Fassungen selbst („Neue Fassung verfügbar“). Auf den
+Stationen und mit Rosenweg Gerät aktualisiert die Technik, dort kommt kein
+Hinweis.

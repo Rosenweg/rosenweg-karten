@@ -1,123 +1,81 @@
 <p align="center"><img src="assets/logo/rosenweg-karten-512.png" width="96" alt="Logo"></p>
 <h1 align="center">Rosenweg Karten</h1>
-<p align="center">NFC-Zutrittskarten der Siedlung Rosenweg verwalten – für die Technik.</p>
-<p align="center"><a href="https://www.rosenweg4303.ch/apps">Herunterladen</a> · <a href="docs/anleitung.md">Anleitung</a></p>
+<p align="center">Rosenweg-Karten nachschlagen, Personen zuordnen, entziehen und aus dem Bestand löschen.</p>
+<p align="center"><a href="docs/anleitung.md">Anleitung</a> · <a href="https://www.rosenweg4303.ch/apps">Herunterladen</a></p>
 
-## Inhalt
+Kartenverwaltung für Technik und Präsident: Rosenweg-Karte (UniFi Access) hinhalten oder auflegen, sehen, wem sie gehört, sie einer Person zuordnen, entziehen oder aus dem Bestand löschen. Dazu das Kartenprotokoll und die Karten-, QR- und Handy-Anmeldungen der Apps aller Personen.
 
-- [Überblick](#überblick)
-- [Plattformen](#plattformen)
-- [Rechte und Gruppen](#rechte-und-gruppen)
-- [Bedienung](#bedienung)
-- [Geteilte Telefone und eigenes Handy](#geteilte-telefone-und-eigenes-handy)
-- [Aufbau](#aufbau)
-- [Bauen](#bauen)
-- [CI und Release](#ci-und-release)
-- [Konfiguration](#konfiguration)
-- [Lizenz](#lizenz)
+Ab 2.0.0 eine Flutter-App für Linux, macOS, Windows, Android und iOS; sie ersetzt die frühere Android-App (Java, bis 1.6.2) mit **derselben Kennung** `ch.rosenweg4303.karten`, demselben Rosenweg-Schlüssel und höherem `versionCode` (10 statt 9) – Android spielt sie als gewöhnliches Update darüber.
 
-## Überblick
+Angelegt mit `werkzeug/neue-app.sh` aus der App-Vorlage von
+[rosenweg-basis](https://github.com/Rosenweg/rosenweg-basis). Anmeldung, API,
+Gerüst, Updater, Kartenleser und Logo kommen aus der Basis.
 
-Kleine App für die Technik, um die NFC-Zutrittskarten (UniFi Access) zu verwalten. Mit denselben Karten melden sich die Leute auch an den geteilten Rosenweg-Telefonen an.
+## Was die App kann
 
-Was die App kann:
+| Bereich | Inhalt | Woher |
+|---|---|---|
+| Karte | Karte lesen (Handy: NFC; Station/Computer: USB-Leser über PC/SC, z. B. ACR122U; iPhone: auf Knopfdruck) oder Nummer eintippen → Inhaber, Inventarnummer, Zustand, UID; **Einer Person zuordnen** (Suche nach Name/E-Mail), **Entziehen**, **Aus dem Bestand löschen** (nur entzogene) | Telefonanlage `POST /api/telefon/karten/info\|zuordnen\|entziehen\|loeschen`, `GET …/personen`; auf geteilten Telefonen über Rosenweg Gerät (`karten_*`) |
+| Protokoll | Kartenprotokoll 30 Tage: Zuordnen, Entziehen, Löschen, Anmeldungen, **Admin mit Karte**, Bestätigungen; Suche und Filter | Haupt-API `GET /api/karten-protokoll` |
+| Anmeldungen | Karten-, QR- und Handy-Anmeldungen der Apps aller Personen; eine beenden oder **alle Apps einer Person** (Karte verloren) | `GET /api/apps/sitzungen?alle=1`, `DELETE /api/apps/sitzungen/:id`, `POST …/alle-abmelden` – nur mit dem Rosenweg-Konto (die API sagt das mit der Karte) |
 
-- **Karte lesen:** Karte hinten ans Telefon halten – Besitzer, Inventarnummer und Status.
-- **Zuordnen:** Karte einer Person geben, über eine durchsuchbare Personenliste. Kennt Access die Karte noch nicht, wird sie als Fremdkarte angelegt.
-- **Entziehen:** Zuordnung lösen; die Karte bleibt im Bestand.
-- **Löschen:** entzogene Karten aus dem Access-Bestand entfernen.
-- **Rückfragen:** Entziehen und Löschen nur mit Bestätigung.
+**Karte wie Schlüssel:** Mit der Karte angemeldet hat man dieselben Rechte wie mit dem Konto. Die App sagt das oben („wird protokolliert, Quittung per E-Mail“), zeigt offene Bestätigungen (`GET /api/me/bestaetigungen`) und – wenn die API eine Aktion erst nach Bestätigung per E-Mail ausführt (202) – „Bestätigung per E-Mail nötig“ statt „erledigt“.
 
-Die Türleser übernehmen Änderungen nach etwa 30 Sekunden. Jede Änderung wird auf dem Server protokolliert (wer, welche Karte, an wen).
+Wer nicht in Technik oder Präsident ist, sieht nur „Die Kartenverwaltung ist nur für Technik und Präsident.“ – die Anlage prüft es ohnehin.
 
-## Plattformen
+## Läuft auf
 
-| Plattform | Stand |
-|---|---|
-| Geteilte Rosenweg-Telefone | ja, über den App-Katalog der Telefonanlage (Rosenweg Gerät installiert sie) |
-| Eigenes Android-Handy (ab Android 8) | ja, APK auf [rosenweg4303.ch/apps](https://www.rosenweg4303.ch/apps), Updates über den Rosenweg Updater |
-| Andere Plattformen | nein (native Android-App) |
+| Plattform | Datei | Grenzen |
+|---|---|---|
+| Linux (Debian 13, Stationen und eigene Rechner) | `rosenweg-karten_<version>_amd64.deb` | Stationen bekommen das Paket vom PXE-Server (os-stationen), dort ist der Updater aus |
+| Android 8 und neuer | `rosenweg-karten-<version>.apk` (Rosenweg-Schlüssel) | auf geteilten Telefonen meldet Rosenweg Gerät an und ab |
+| Windows 10/11 | `Rosenweg-Karten-<version>-Setup.exe` | unsigniert, solange kein Code-Signing-Zertifikat da ist (SmartScreen fragt einmal) |
+| macOS 11 und neuer | `Rosenweg-Karten-<version>.dmg` | ohne Apple Developer ID ad hoc signiert (Gatekeeper fragt beim ersten Start) |
+| iOS/iPadOS | – | baut in CI ohne Signatur, verteilt wird erst mit dem Apple Developer Program |
 
-## Rechte und Gruppen
-
-Die Berechtigung prüft die Telefonanlage bei **jeder** Aktion; die App selbst entscheidet nichts.
-
-| Wer | darf |
-|---|---|
-| Gruppen `technik`, `präsident` (`praesident`) | Karten lesen, zuordnen, entziehen, löschen; Personenliste sehen |
-| alle anderen | nichts (Antwort „nicht berechtigt“); im Katalog der geteilten Telefone erscheint die App nur für diese Gruppen |
-
-Rosenweg Gerät prüft die Gruppen zusätzlich live, die Anlage nochmals an der Sitzung der Nebenstelle.
+Herunterladen: [www.rosenweg4303.ch/apps](https://www.rosenweg4303.ch/apps).
 
 ## Bedienung
 
-| Schritt | So geht’s |
-|---|---|
-| Karte prüfen | App öffnen, Karte hinten ans Telefon halten |
-| Zuordnen | Person in der Liste suchen und wählen. Gehört die Karte schon jemandem, kommt eine Meldung mit dem Namen – zuerst entziehen. |
-| Entziehen | „Entziehen“, Rückfrage bestätigen |
-| Löschen | nur bei entzogenen Karten, mit Rückfrage |
+Siehe [docs/anleitung.md](docs/anleitung.md).
 
-Hat eine Person noch keinen Benutzer in UniFi Access, kommt eine Fehlermeldung: zuerst dort anlegen. Fremdkarten müssen in Access erlaubt sein (Card Inventory › Third-Party NFC Cards).
+## Entwickeln
 
-Mehr: [docs/anleitung.md](docs/anleitung.md).
-
-## Geteilte Telefone und eigenes Handy
-
-| Gerät | Anmeldung | Weg der Anfragen |
-|---|---|---|
-| Geteiltes Rosenweg-Telefon | Karte am Sperrbildschirm (Rosenweg Gerät) | über Rosenweg Gerät an die Telefonanlage; die App hat keine Zugangsdaten |
-| Eigenes Handy ohne Rosenweg Gerät | gemeinsamer Anmeldeschirm (Modul `cloud` aus commons-rosenweg): Rosenweg-Karte, Rosenweg-Konto oder QR-Code; Abmelden unter „Einstellungen“ | direkt an die Telefonanlage, mit dem Zugang der Anmeldung (Karte/QR: `rw_app_…`, Konto: Authentik-Token); die Anlage prüft Technik/Präsident |
-
-Auf den geteilten Telefonen braucht die App die Rosenweg-Signatur (sonst „Rosenweg Gerät verweigert den Zugriff“) und Rosenweg Gerät ab Version 186.
-
-## Aufbau
-
-| Teil | Inhalt |
-|---|---|
-| `app/src/main/java/…/KartenActivity.java` | die ganze App: NFC lesen, Anzeige, Zuordnen, Entziehen, Löschen |
-| `app/src/main/java/…/EinstellungenActivity.java` | Einstellungen: wer angemeldet ist und womit, Abmelden (nur eigenes Handy), Version |
-| `ch.rosenweg4303:cloud` (0.13.4) | Anmeldeschirm (Karte, Konto, QR-Code) auf eigenen Handys ([commons-rosenweg](https://github.com/Rosenweg/commons-rosenweg)) |
-| `assets/logo/` | Logo aus dem Baukasten von rosenweg-basis: Wappen (Turm, Weg, Rose) mit Karten-Plakette, dazu ein monochromes Designsymbol (Android 13+) |
-
-**Server:** Endpunkte `/api/telefon/karten/info`, `…/zuordnen`, `…/entziehen`, `…/loeschen`, `…/personen` der Telefonanlage; sie reicht an die Haupt-API und UniFi Access weiter (Rosenweg/Website, `pbx/GETEILTE-TELEFONE.md`).
-
-Paketname `ch.rosenweg4303.karten`, minSdk 26, targetSdk 35.
-
-## Bauen
-
-Die App holt `ch.rosenweg4303:cloud` aus dem lokalen Maven-Repository, also zuerst commons-rosenweg veröffentlichen:
-
-```bash
-# in commons-rosenweg, Zweig main
-./gradlew -PVERSION=7.1.3-rosenweg.1 publishToMavenLocal
-
-# in diesem Repo
-./gradlew assembleRelease
+```sh
+# rosenweg-basis daneben auschecken, dann lokal gegen sie bauen:
+printf 'dependency_overrides:\n  rosenweg_basis:\n    path: ../rosenweg-basis\n' > pubspec_overrides.yaml
+flutter pub get
+flutter run -d macos                       # oder linux, windows, ein Handy
+flutter run -d macos --dart-define=RW_ATTRAPPE=1   # ohne Server, mit Vorführdaten (lib/attrappe.dart)
+flutter analyze && flutter test
+RW_FOTO=$HOME/Downloads flutter test test/bildschirmfoto_test.dart   # Bildschirmfotos
 ```
 
-Signiert wird mit `keystore.properties` in diesem Ordner oder der von `android-sip-rosenweg` daneben (nie einchecken). Der Schlüssel muss derselbe sein wie bei Rosenweg Gerät.
+Vor dem Commit `pubspec_overrides.yaml` entfernen und `flutter pub get` laufen lassen –
+`pubspec.lock` darf nicht auf `../rosenweg-basis` zeigen (die CI bricht sonst ab).
 
-Logo neu erzeugen (rosenweg-basis daneben): `sh assets/logo/erzeugen.sh`. Welches Zeichen die App trägt, steht in rosenweg-basis `werkzeug/logo/android-apps.txt`.
-
-Mehr: [docs/entwickeln.md](docs/entwickeln.md).
-
-## CI und Release
-
-| Schritt | Was |
+| Ordner | Inhalt |
 |---|---|
-| CI | `.github/workflows/ci.yml`: bei jedem PR Debug-Bau und Lint (GitHub-Runner) |
-| APK bauen | lokal mit dem Rosenweg-Schlüssel (siehe oben) |
-| Release | `gh release create v<versionName> <datei.apk> --notes "Was ist neu"` – Tag = versionName, eine APK je Release |
-| Verteilen | `.github/workflows/apps.yml` (nutzt `apps-release.yml` aus Rosenweg/Website) schickt die APK an **[rosenweg4303.ch/apps](https://www.rosenweg4303.ch/apps)** und in den App-Katalog der Telefonanlage |
-| Erneut senden | `gh workflow run apps.yml --ref <tag>` |
+| `lib/app.dart` | `RosenwegApp`: Kennung `ch.rosenweg4303.karten`, Name, Logo |
+| `lib/seiten/` | die Seiten der App (`RosenwegGeruest`: Handy unten, Desktop links) |
+| `lib/attrappe.dart` | Vorführdaten statt der API (Tests, Bildschirmfotos) |
+| `assets/logo/` | Logo aus dem Baukasten der Basis: `sh assets/logo/erzeugen.sh ../rosenweg-basis` |
+| `linux/paket/` | Debian-Paket (`bauen.sh`, im Bau-Container `im-container.sh`), `paket.conf` = Vorlage für os-stationen |
+| `macos/installer/` | DMG (`bauen.sh`) |
+| `windows/installer/` | Inno-Setup-Installer |
+| `.github/workflows/` | `app.yml` (Bau, Release) und `apps.yml` (an /apps) – die Arbeit macht rosenweg-basis |
 
-Anmeldung per GitHub-OIDC, kein gespeichertes Geheimnis. Die Anlage prüft Repo, Tag, Prüfsumme, Rosenweg-Signatur und Paketnamen; die App muss im Katalog (rosenweg4303.ch/smartphones) schon stehen.
+## Veröffentlichen
 
-## Konfiguration
-
-Keine GitHub-Secrets. Lokal nur `keystore.properties` (Signierschlüssel, nie einchecken). Die Gruppen mit Zugriff stehen in der Telefonanlage (Rosenweg/Website, `pbx/`).
+1. Version in `pubspec.yaml` erhöhen (`version: x.y.z+n`, Baunummer immer mit).
+2. Pull Request, CI grün (Linux und Android), Merge auf main.
+3. Die CI baut alle fünf Plattformen, legt das Release `vx.y.z` an und schickt
+   APK, `.deb`, DMG und Installer an `/apps`. Ohne neue Version passiert nach dem
+   Merge nur die CI.
+4. Stationen: `linux/paket/paket.conf` in os-stationen (`pakete/rosenweg-karten/`)
+   mit Version und Prüfsumme nachführen.
 
 ## Lizenz
 
-GPL-3.0-or-later, siehe [LICENSE](LICENSE).
+GPL-3.0-or-later, siehe [LICENSE](LICENSE). Logo-Zeichen: siehe rosenweg-basis
+`werkzeug/logo/zeichen/LIZENZEN.md`.

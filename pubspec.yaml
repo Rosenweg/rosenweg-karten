@@ -1,0 +1,40 @@
+name: rosenweg_karten
+description: "Rosenweg Karten – Rosenweg-Karten nachschlagen, Personen zuordnen, entziehen und aus dem Bestand löschen."
+publish_to: 'none'
+
+# version: x.y.z+Baunummer. Die Baunummer ist der Android-versionCode: die alte
+# Java-App stand bei 1.6.2 (9); hoeher, damit sie sauber ersetzt wird.
+# version: x.y.z+Baunummer. Ein Merge auf main mit einer NEUEN Version (Tag
+# vx.y.z gibt es noch nicht) baut alle Plattformen und veroeffentlicht sie
+# (GitHub-Release, /apps). Unveraenderte Version = nur CI, kein Release.
+version: 2.0.0+10
+
+environment:
+  sdk: ^3.13.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  # Gemeinsame Basis der Rosenweg-Apps: Anmeldung (Karte, QR, Konto, still per
+  # Kerberos), API, Gerüst (Handy/Desktop), Updater, Logo-Baukasten.
+  # Oeffentliches Repo: pub holt es ohne Token; lokal mit ../rosenweg-basis
+  # ueber pubspec_overrides.yaml (siehe README, "Entwickeln").
+  rosenweg_basis:
+    git:
+      url: https://github.com/Rosenweg/rosenweg-basis.git
+      # fester Stand. Bis rosenweg-basis v0.6.0 getaggt ist: Commit von PR #14
+      # (Karte lesen in der App, BestaetigungPerEmail); danach ref: v0.6.0.
+      ref: d7477c4eb7b2481d6493c1ccebc2e37d97480c4f
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  # Logo fuer Anmeldeschirm, "Über" und Titelleiste (assets/logo/erzeugen.sh)
+  assets:
+    - assets/logo/rosenweg-karten-512.png
+    - assets/logo/rosenweg-karten-klein.png

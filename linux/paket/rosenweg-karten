@@ -1,0 +1,4 @@
+#!/bin/sh
+# Startet Rosenweg Karten aus /opt/rosenweg-karten (Flutter-Buendel sucht data/
+# und lib/ neben der echten Programmdatei; wie rosenweg-profil, rosenweg-vm).
+exec /opt/rosenweg-karten/rosenweg_karten "$@"
